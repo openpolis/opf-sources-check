@@ -1,0 +1,17 @@
+# This is an implicit value, here for clarity
+--index-url https://pypi.python.org/simple/
+
+# Bleeding edge Django (py 2.7, 3.4, 3.5)
+Django>=1.8,<1.10
+django-extensions>=1.4
+
+# Configuration
+django-environ>=0.3
+
+# Forms
+django-braces>=1.4
+
+# Models
+django-model-utils>=2.2
+
+psycopg2
