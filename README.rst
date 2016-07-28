@@ -1,42 +1,18 @@
 Openpolis Sources Check
 =============================
 
-Webapp that facilitates verification of sources
+Webapp that facilitates the verification of a pool of sources..
 
-Vedi la cartella `project/` per il codice sorgente.
+See ``project/`` folder for this project's source code..
 
-Vedi la cartella `docs/` per la documentazione completa del progetto.
+See  ``docs/`` folder for a complete documentation of the project.
 
-Development
------------
 
-Clona questo repository, entra nella cartella creata poi esegui:
-
-::
-
-    $ pip install -r requirements/development.txt
-    $ python project/manage.py syncdb
-    $ python project/manage.py runserver
-
-Configura il file `config/.env` con i parametri necessari a far partire l'applicazione.
-
-Testing
--------
-
-Per avviare tutti i moduli TestCase Django:
-
-::
-
-    $ python project/manage.py test
-
-Per avviare i test funzionali con selenium:
-
-::
-
-    $ python project/manage.py test tests.functional_tests
 
 License
 -------
 
-Vedi il file LICENSE.txt
-Vedi gli autori di questo progetto nel file CONTRIBUTORS.txt
+See ``LICENSE.txt``
+To see te authors of this project, open ``CONTRIBUTORS.txt``
+
+
