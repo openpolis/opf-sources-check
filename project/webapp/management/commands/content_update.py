@@ -1,14 +1,14 @@
-import difflib
-import datetime
-
 from django.core.management.base import BaseCommand, CommandError
-
 from webapp.models import Content
+import datetime
 
 
 class Command(BaseCommand):
-    help = "Verify content of specified URI's ids or all content marked as " \
-           "todo (see content_list task)"
+    help = """
+        Get live content,
+        from specified URI's ids, or from all URIs marked as TODO.
+        Use to bulk-update sources.
+    """
 
     def add_arguments(self, parser):
         parser.add_argument('id', nargs='*', type=int)
@@ -17,38 +17,32 @@ class Command(BaseCommand):
             action='store_true',
             dest='dryrun',
             default=False,
-            help='Execute a dry run: no db is written.',
+            help='Execute a dry run: no db is written.'
         )
-        parser.add_argument('--meat',
+        parser.add_argument('--html',
             action='store_true',
-            dest='showmeat',
+            dest='showhtml',
             default=False,
-            help='Show extracted text',
-        )
-        parser.add_argument('--diff',
-            action='store_true',
-            dest='showdiff',
-            default=False,
-            help='Show diff code.',
+            help='Show html code.'
         )
         parser.add_argument('--offset',
             action='store',
             type=int,
             dest='offset',
             default=0,
-            help='Force offset <> 0',
+            help='Force offset <> 0'
         )
         parser.add_argument('--limit',
             action='store',
             type=int,
             dest='limit',
             default=0,
-            help='Force offset <> 0',
+            help='Force offset <> 0'
         )
+
 
     def handle(self, *args, **options):
         offset = options['offset']
-
         limit = options['limit']
 
         if len(args) == 0:
@@ -61,12 +55,12 @@ class Command(BaseCommand):
             contents = Content.objects.filter(id__in=args)
 
         if (len(contents) == 0):
-            print("no content to check this time")
+            print("no content to get this time")
 
         for cnt, content in enumerate(contents):
             err_msg = ''
             try:
-                verification_status = content.verify(options['dryrun'])
+                content.update()
             except IOError:
                 err_msg = "Errore: Url non leggibile: %s" % (content.url)
             except Exception as e:
@@ -83,16 +77,12 @@ class Command(BaseCommand):
                     ))
                 else:
                     print(
-                        "{0}/{1} - {2} (id: {4}) - {3}".format(
+                        "{0}/{1} - {2} (id: {3}) - AGGIORNATO".format(
                             cnt + 1, len(contents), content.title,
-                            content.get_verification_status_display().upper(),
                             content.id
                         )
                     )
-                    if options['showmeat'] == True:
+                    if options['showhtml'] == True:
                         print("Meaningful content: %s") % content.get_live_meat()
-                    if options['showdiff'] == True:
-                        live = content.get_live_meat().splitlines(1)
-                        stored = content.meat.splitlines(1)
-                        diff = difflib.ndiff(live, stored)
-                        print("".join(diff))
+                    if options['dryrun'] == False:
+                        content.save()

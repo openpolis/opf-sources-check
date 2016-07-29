@@ -11,7 +11,7 @@ A regular expression may be used in order to exclude parts of the content that c
 
 Whenever a difference between computed and stored hashes emerges, the hash is overwritten in the content's record on the DB and the verification status is set to changed.
 
-If an error occurs, the status is changed to 
+If an error occurs, the status is changed to
 Another script checks whether there was at least one change, and send a notification to all registered recipient.
 
 A backend interface allows administrators to manage the list of contents and of recipients and see the verificatio or error status.
@@ -36,10 +36,19 @@ The chosen hashing algorythm is sha512, which produces a digest string of 64 hex
 
 .. code-block:: python
 
-  import hashlib
-  h = hashlib.sha512()
-  h.update(content)
-  print h.hexdigest()
+    import hashlib
+    h = hashlib.sha512()
+    h.update(content)
+    print h.hexdigest()
 
+
+Cronjobs
+========
+
+.. code-block:: python
+
+    # verify contents and notify (in case) to registered users
+    django-admin.py content_verify
+    django-admin.py notify
 
 
