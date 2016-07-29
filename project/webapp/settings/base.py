@@ -209,6 +209,7 @@ DJANGO_APPS = (
 
 # Apps specific for this project go here.
 LOCAL_APPS = (
+    'webapp',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

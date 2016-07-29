@@ -4,7 +4,9 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
+from django.views.generic.base import RedirectView
+
+from webapp.views import diff
 
 # load admin modules
 from django.contrib import admin
@@ -12,16 +14,9 @@ admin.autodiscover()
 
 
 urls = [
-    url(r'^$', TemplateView.as_view(template_name='base.html')),
-
-    # Examples:
-    # url(r'^$', 'webapp.views.home', name='home'),
-    # url(r'^webapp/', include('webapp.foo.urls')),
-
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
+    url(r'^$', RedirectView.as_view(pattern_name='admin:index')),
     url(r'^admin/', admin.site.urls),
+    url(r'^diff/(?P<content_id>\d+)$', diff),      
 ]
 urlpatterns = urls
 
