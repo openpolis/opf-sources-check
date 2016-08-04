@@ -206,6 +206,10 @@ DJANGO_APPS = (
 
     # Django helper
     'django_extensions',
+
+    # admin enhancers apps
+    'django_object_actions',
+    'django_admin_row_actions',
 )
 
 # Apps specific for this project go here.

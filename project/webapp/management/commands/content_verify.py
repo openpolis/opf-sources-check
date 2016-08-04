@@ -7,8 +7,7 @@ from webapp.models import Content
 
 
 class Command(BaseCommand):
-    help = "Verify content of specified URI's ids or all content marked as " \
-           "todo (see content_list task)"
+    help = "Verify content of specified URI's ids or all"
 
     def add_arguments(self, parser):
         parser.add_argument('id', nargs='*', type=int)
@@ -53,10 +52,10 @@ class Command(BaseCommand):
 
         if len(args) == 0:
             if (limit > 0):
-                contents = Content.objects.filter(todo='yes')[
+                contents = Content.objects.all()[
                            offset:(offset + limit)]
             else:
-                contents = Content.objects.filter(todo='yes')[offset:]
+                contents = Content.objects.all()[offset:]
         else:
             contents = Content.objects.filter(id__in=args)
 

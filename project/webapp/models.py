@@ -39,10 +39,6 @@ class Content(models.Model):
         (STATUS_NOT_CHANGED, 'invariato'),
         (STATUS_ERROR, 'contiene errori')
     )
-    TODO = (
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
 
     title = models.CharField(
         max_length=250,
@@ -81,10 +77,6 @@ class Content(models.Model):
     verification_error = models.CharField(
         blank=True, null=True, max_length=250,
         verbose_name=_("Errore")
-    )
-    todo = models.CharField(
-        null=True, blank=True,
-        max_length=3, choices=TODO
     )
 
     class Meta:

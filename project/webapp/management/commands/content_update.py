@@ -6,7 +6,7 @@ import datetime
 class Command(BaseCommand):
     help = """
         Get live content,
-        from specified URI's ids, or from all URIs marked as TODO.
+        from specified URI's ids, or from all URIs.
         Use to bulk-update sources.
     """
 
@@ -47,10 +47,10 @@ class Command(BaseCommand):
 
         if len(args) == 0:
             if (limit > 0):
-                contents = Content.objects.filter(todo='yes')[
+                contents = Content.objects.all()[
                            offset:(offset + limit)]
             else:
-                contents = Content.objects.filter(todo='yes')[offset:]
+                contents = Content.objects.all()[offset:]
         else:
             contents = Content.objects.filter(id__in=args)
 

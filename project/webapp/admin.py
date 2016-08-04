@@ -3,18 +3,19 @@ from django.contrib import messages
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django_admin_row_actions import AdminRowActionsMixin
+from django_object_actions import DjangoObjectActions
 from django.utils import timezone
 
 from .models import Content, Recipient, OrganisationType
 
 
-class ContentAdmin(admin.ModelAdmin):
-    list_display = ('_linked_title', 'organisation_type_id', 'todo',
+class ContentAdmin(DjangoObjectActions, AdminRowActionsMixin, admin.ModelAdmin):
+    list_display = ('_linked_title',
                     'verified_at',
                     '_status_and_message')
     search_fields = ('title', 'notes')
-    radio_fields = {'todo': admin.HORIZONTAL}
-    list_filter = ('verification_status', 'todo', 'organisation_type')
+    list_filter = ('verification_status', 'organisation_type')
     fieldsets = (
         (None, {
             'fields': ('title', 'organisation_type', 'notes', 'url', 'xpath',
@@ -22,8 +23,7 @@ class ContentAdmin(admin.ModelAdmin):
             'classes': ['wide', 'extrapretty']
         }),
         ('Verification', {
-            'fields': (
-            'todo', 'verified_at', 'verification_status', 'verification_error')
+            'fields': ('verified_at', 'verification_status', 'verification_error')
         })
     )
     readonly_fields = (
@@ -67,19 +67,6 @@ class ContentAdmin(admin.ModelAdmin):
 
     verify.short_description = "Verifica differenze sui siti live"
 
-    def set_todo(self, request, queryset):
-        for obj in queryset:
-            obj.todo = 'yes'
-            obj.save()
-
-    set_todo.short_description = "Marca il sito come da fare"
-
-    def unset_todo(self, request, queryset):
-        for obj in queryset:
-            obj.todo = 'no'
-            obj.save()
-
-    unset_todo.short_description = "Marca il sito come non da fare"
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
 
@@ -129,8 +116,24 @@ class ContentAdmin(admin.ModelAdmin):
                 request, object_id, form_url, extra_context=extra_context,
             )
 
-    actions = [update, verify, set_todo, unset_todo]
+    actions = [update, verify,]
 
+
+    def publish_this(self, request, obj):
+        pass
+
+    publish_this.label = "Publish"  # optional
+    publish_this.short_description = "Submit this article to The Texas Tribune"
+
+    change_actions = ('publish_this',)
+
+    def get_row_actions(self, obj):
+        row_actions = [
+            {'label': 'Verifica', 'action': 'verify', 'enabled': False},
+
+        ]
+        row_actions += super(ContentAdmin, self).get_row_actions(obj)
+        return row_actions
 
 admin.site.register(Content, ContentAdmin)
 admin.site.register(Recipient)

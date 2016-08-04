@@ -18,8 +18,8 @@ class Command(BaseCommand):
         msg_txt = ""
         msg_html = ""
 
-        modified_contents = Content.objects.filter(todo='yes', verification_status=Content.STATUS_CHANGED)
-        failed_contents = Content.objects.filter(todo='yes', verification_status=Content.STATUS_ERROR)
+        modified_contents = Content.objects.filter(verification_status=Content.STATUS_CHANGED)
+        failed_contents = Content.objects.filter(verification_status=Content.STATUS_ERROR)
 
         if modified_contents.count():
             msg_txt += "Cambiamenti:\n"
