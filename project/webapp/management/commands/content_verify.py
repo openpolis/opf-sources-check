@@ -19,7 +19,7 @@ class Command(BaseCommand):
             default=False,
             help='Execute a dry run: no db is written.',
         )
-        parser.add_argument('--meat',
+        parser.add_argument('--content',
             action='store_true',
             dest='showmeat',
             default=False,
@@ -90,9 +90,9 @@ class Command(BaseCommand):
                         )
                     )
                     if options['showmeat'] == True:
-                        print("Meaningful content: %s") % content.get_live_meat()
+                        print("Meaningful content: %s") % content.get_live_content()
                     if options['showdiff'] == True:
-                        live = content.get_live_meat().splitlines(1)
+                        live = content.get_live_content().splitlines(1)
                         stored = content.meat.splitlines(1)
                         diff = difflib.ndiff(live, stored)
                         print("".join(diff))

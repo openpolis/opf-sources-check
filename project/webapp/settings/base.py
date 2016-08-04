@@ -143,6 +143,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             normpath(join(PACKAGE_PATH, 'templates')),
+            normpath(join(REPO_PATH, 'project', 'templates')),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -261,7 +262,7 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         }
-        
+
     },
 }
 ########## END LOGGING CONFIGURATION

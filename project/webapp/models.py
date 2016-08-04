@@ -4,15 +4,28 @@ from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 import re
-from os import sys
-
-from model_utils import Choices
 
 import html2text
 import requests
 import lxml.html
-from lxml import etree
 
+
+@python_2_unicode_compatible
+class OrganisationType(models.Model):
+    """the type of source, describes the kind of organisation the content is
+    about"""
+
+    name = models.CharField(
+        max_length=250,
+        verbose_name=_("Denominazione"),
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'tipo di organizzazione'
+        verbose_name_plural = 'tipi di organizzazione'
 
 @python_2_unicode_compatible
 class Content(models.Model):
@@ -37,12 +50,24 @@ class Content(models.Model):
         help_text="""usare la sequenza IT - Nome, dove: I-Istituzione
                      [C|G], T-tipo[R|P|C], Nome (es. CR - Lazio)"""
     )
+    organisation_type = models.ForeignKey(
+        OrganisationType,
+        verbose_name=_("Tipo di organizzazione")
+    )
     url = models.URLField()
     xpath = models.CharField(blank=True, max_length=250)
-    regexp = models.CharField(blank=True, null=True, max_length=250,
-                              verbose_name=_("Espressione regolare"))
-    meat = models.TextField(blank=True, null=True, verbose_name=_("Contenuto significativo"))
-    notes = models.TextField(blank=True, null=True, verbose_name=_("Note"))
+    regexp = models.CharField(
+        blank=True, null=True, max_length=250,
+        verbose_name=_("Espressione regolare")
+    )
+    content = models.TextField(
+        blank=True, null=True,
+        verbose_name=_("Contenuto significativo")
+    )
+    notes = models.TextField(
+        blank=True, null=True,
+        verbose_name=_("Note")
+    )
     verified_at = models.DateTimeField(
         blank=True, null=True,
         verbose_name=_("Timestamp")
@@ -57,7 +82,10 @@ class Content(models.Model):
         blank=True, null=True, max_length=250,
         verbose_name=_("Errore")
     )
-    todo = models.CharField(max_length=3, choices=TODO, null=True, blank=True)
+    todo = models.CharField(
+        null=True, blank=True,
+        max_length=3, choices=TODO
+    )
 
     class Meta:
         verbose_name = 'contenuto'
@@ -67,11 +95,20 @@ class Content(models.Model):
         return self.title
 
 
-    def get_live_meat(self):
+    def get_live_content(self):
         """
-        requests content from URI, using XPATH, returns cleanest possible textual content
+        requests content from URI, using XPATH,
+
+        :return: 2-tuple
+          cleanest possible textual content, or error message,
+          along with response status code
+          when xpath failes status code is 900
         """
+
         res = requests.get(self.url)
+        if res.status_code != 200:
+            return (res.status_code, "URL")
+
         parser = lxml.html.HTMLParser(remove_comments=True)
         tree = lxml.html.fromstring(res.content, parser=parser)
 
@@ -80,47 +117,99 @@ class Content(models.Model):
         if (len(html_elements)):
             html_element = html_elements[0]
         else:
-            raise NameError('xpath non trova niente: %s' % self.xpath)
+            return (900, "XPATH")
 
         # transform it into a string, extracting text content
         p = re.compile(self.regexp)
         content = p.sub('', html_element.text_content())
 
         html2text.UNICODE_SNOB = 1
-        return html2text.html2text(content)
-
+        return (200, html2text.html2text(content))
 
     def verify(self, dryrun=False):
         """verifies that live content is different from content in DB"""
-        live = self.get_live_meat().\
-            replace("\n", " ").replace("\t", " ").\
-            replace(chr(160), " ").\
-            strip(" ")
-        stored = self.meat.\
-            replace("\n", " ").replace("\t", " ").\
-            replace(chr(160), " ").\
-            strip(" ")
-        if  (live != stored):
-            self.verification_status = self.STATUS_CHANGED
-        else:
-            self.verification_status = self.STATUS_NOT_CHANGED
-        self.verified_at = timezone.now()
+        (resp_code, resp_content) = self.get_live_content()
 
+        if resp_code != 200:
+            self.verification_status = Content.STATUS_ERROR
+            self.verification_error = "ERRORE {0} ({1})".format(
+                resp_code, resp_content
+            )
+        else:
+            resp_content = resp_content.\
+                replace("\n", " ").replace("\t", " ").\
+                replace(chr(160), " ").\
+                strip(" ")
+
+            if self.content:
+                stored_content = self.content.\
+                    replace("\n", " ").replace("\t", " ").\
+                    replace(chr(160), " ").\
+                    strip(" ")
+            else:
+                stored_content = ''
+
+            if  (resp_content != stored_content):
+                self.verification_status = self.STATUS_CHANGED
+            else:
+                self.verification_status = self.STATUS_NOT_CHANGED
+
+            self.verification_error = None
+
+        self.verified_at = timezone.now()
         if dryrun == False:
             self.save()
+
         return self.verification_status
-
-
 
     def update(self):
         """updates db with live content; align verification status"""
-        self.meat = self.get_live_meat()
+        (resp_code, resp_content) = self.get_live_content()
+
+        if resp_code != 200:
+            self.verification_status = Content.STATUS_ERROR
+            self.verification_error = "ERRORE {0} ({1})".format(
+                resp_code, resp_content
+            )
+        else:
+            resp_content = resp_content. \
+                replace("\n", " ").replace("\t", " "). \
+                replace(chr(160), " "). \
+                strip(" ")
+
+        self.content = self.get_live_content()
         self.verification_status = self.STATUS_NOT_CHANGED
         self.verification_error = None
-        self.verified_at = None
+        self.verified_at = timezone.now()
         self.save()
 
+    def get_inhabitants(self):
+        """
+        search number of inhabitants in api3.openpolis.it/locations
+        the content's title is supposed to be:
+        CC - ID - City name (PR) or CC - City name
 
+        :return: number of inhabitants ad integer
+        """
+        m = re.match(r'^.*-\s*(.*?)\s*\((.*)\)\s*', self.title)
+        if m is None:
+            raise Exception("Incorrect title format: {0}".format(self.title))
+
+        city_name = m.group(1).strip()
+        api_url = "http://api3.openpolis.it/territori/locations.json" + \
+                  "?loc_type=c&nameiexact={0}".format(city_name)
+        res = requests.get(api_url)
+        if res.status_code == 404:
+            raise Exception("404 error while requesting @api3.openpolis.it")
+        r = res.json()
+        if r['count'] == 0:
+            raise Exception(
+                "City {0} not found @api3.openpolis.it".format(city_name))
+        if r['count'] > 1:
+            raise Exception("City {0} found more than once "
+                            "@api3.openpolis.it".format(city_name))
+
+        return r['results'][0]['inhabitants']
 
 
 @python_2_unicode_compatible

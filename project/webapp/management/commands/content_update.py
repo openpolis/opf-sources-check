@@ -83,6 +83,6 @@ class Command(BaseCommand):
                         )
                     )
                     if options['showhtml'] == True:
-                        print("Meaningful content: %s") % content.get_live_meat()
+                        print("Meaningful content: %s") % content.get_live_content()
                     if options['dryrun'] == False:
                         content.save()
